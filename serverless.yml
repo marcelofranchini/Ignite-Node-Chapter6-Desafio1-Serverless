@@ -1,0 +1,88 @@
+service: 'serverless-desafio'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  lambdaHashingVersion: '20201221'
+  # region: us-east-1
+  # iamRoleStatements:
+  #   - Effect: Allow
+  #     Action:
+  #       - dynamodb:*
+  #     Resource: "*"
+  #   - Effect: Allow
+  #     Action:
+  #       - s3:*
+  #     Resource: "*"
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-dynamodb-local
+
+# package:
+#  individually: true
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+  dynamodb:
+    stages:
+      - dev
+      - local
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+
+
+
+functions:
+  teste:
+    handler: src/functions/teste.handle
+    events:
+      - httpApi:
+          path: /teste/
+          method: POST
+
+  createUser:
+    handler: src/functions/createTodo.handle
+    events:
+      - httpApi:
+          path: /createTodo/{user_id}
+          method: POST
+#     iamRoleStatements:
+#       - Effect: Allow
+#         Action:
+#           - dynamodb:Query
+#           - dynamodb:PutItem
+#         Resource: "arn:aws:dynamodb:${self.provider.region}:*:table/users"
+
+  verifyCertificate:
+    handler: src/functions/listTodo.handle
+    events:
+      - httpApi:
+          path: /listTodo/{user_id}
+          method: GET
+#     iamRoleStatements:
+#       - Effect: Allow
+#         Action:
+#           - dynamodb:Query
+#         Resource: "arn:aws:dynamodb:${self.provider.region}:*:table/users"
+
+resources:
+  Resources:
+    dbCertificateUsers:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: todos
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
